@@ -1,9 +1,13 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 
+##////////////////////////////////////
+##-----------READ ME------------------
+## Easiest way for Gui to interact with other classes or functions
+## is to call them in the section at line 331. Gui can pass the search parameters
+##////////////////////////////////////
 
-
-class GUI:
+class Gui:
     ## Citation regarding the GUI class, the trick to get rounded borders on widgets was found on stackoverflow
     ## here: https://stackoverflow.com/questions/51425633/tkinter-how-to-make-a-rounded-corner-text-widget
     ## in the answer from Bryan Oakley
@@ -12,7 +16,7 @@ class GUI:
 
         ## Window setup
         self.root = tk.Tk()
-        self.root.geometry("800x500")
+        self.root.geometry("800x600")
         self.root.configure(background="white")
         self.root.title("Influence Analysis")
 
@@ -218,14 +222,28 @@ class GUI:
 ##---------------Styles----------------
 ## Turn blue rounded edge border image into style
         self.style = ttk.Style()
-        self.style.element_create("blueRoundBorder", "image", "blueRoundBorderImage", border=16, sticky="nsew")
+        self.style.element_create("blueRoundBorder", "image", "blueRoundBorderImage", border=16)
         self.style.layout("blueRoundBorder", [("blueRoundBorder", {"sticky": "nsew"})])
         self.style.configure("TLabel", borderwidth=0, background="#00AEF5")
+
 ## Turn white rounded edge border image into style
         self.style.element_create("whiteRoundBorder", "image", "whiteRoundBorderImage", border=16, sticky="nsew")
         self.style.layout("whiteRoundBorder", [("whiteRoundBorder", {"sticky": "nsew"})])
         self.style.configure("TEntry", borderwidth=0)
+
+## Radio button style
+        self.style.configure("TRadiobutton", background="white", font=('Consolas', 11))
+### Search button style
+        self.style.configure("TButton", font=('Helvetica Neue', 20, 'bold'))
 ##/////////////////////////////////////
+
+##//////////////////////////////////////////////////////////
+##----------Main Class Functionality-----------------------
+##----------Variables---------------------
+        self.username = tk.StringVar()
+        self.maxDegSeparation = tk.StringVar()
+        self.minNumFollowers = tk.StringVar()
+        self.searchType = tk.StringVar()
 
 ##----------Title-------------------------
 ## Create title frame using blue rounded edge image style
@@ -250,48 +268,127 @@ class GUI:
         self.searchParam.place(x=25, y=115)
 
 ## Entry box for username
-        self.username = tk.Label(self.root, text=">>> username: ", font=('Consolas', 14), background="white")
-        self.username.place(x=25, y=145)
+        self.usernameLabel = tk.Label(self.root, text=">>> username: ", font=('Consolas', 14), background="white")
+        self.usernameLabel.place(x=25, y=145)
         self.searchFrame = ttk.Frame(style="whiteRoundBorder", padding=10)
         self.searchFrame.place(x=160, y=140)
-        self.searchEntry = tk.Entry(self.searchFrame, font=('Consolas', 12), highlightthickness=0, relief="flat", width=30)
+        self.searchEntry = tk.Entry(self.searchFrame, textvariable=self.username, font=('Consolas', 12), highlightthickness=0, relief="flat", width=30)
         self.searchEntry.pack()
 
 ## Entry box for max degrees of separation
         self.separation = tk.Label(self.root, text="> maximum degrees of separation: ", font=('Consolas', 11), background="white")
-        self.separation.place(x=25, y=190)
+        self.separation.place(x=25, y=195)
         self.separationFrame = ttk.Frame(style="whiteRoundBorder", padding=10)
         self.separationFrame.place(x=285, y=185)
-        self.separationEntry = tk.Entry(self.separationFrame, font=('Consolas', 8), highlightthickness=0, relief="flat", width=3)
+        self.separationEntry = tk.Entry(self.separationFrame, textvariable=self.maxDegSeparation, font=('Consolas', 12), highlightthickness=0, relief="flat", width=3)
         self.separationEntry.pack()
 
 ## Entry box for minimum number of desired followers
         self.followers = tk.Label(self.root, text="> minimum number of followers: ", font=('Consolas', 11), background="white")
-        self.followers.place(x=25, y=227)
+        self.followers.place(x=25, y=240)
         self.followersFrame = ttk.Frame(style="whiteRoundBorder", padding=10)
-        self.followersFrame.place(x=270, y=222)
-        self.followersEntry = tk.Entry(self.followersFrame, font=('Consolas', 8), highlightthickness=0, relief="flat", width=10)
+        self.followersFrame.place(x=270, y=230)
+        self.followersEntry = tk.Entry(self.followersFrame, textvariable=self.minNumFollowers, font=('Consolas', 12), highlightthickness=0, relief="flat", width=10)
         self.followersEntry.pack()
 
 ##----------Search Type (BFS, DFS) Radiobuttons-------------
 ## Variable searchStyle will contain either "BFS" or "DFS" depending on the button selected
-        self.searchType = tk.StringVar()
         self.rButton1 = ttk.Radiobutton(self.root, text="BFS Style", value="BFS", variable=self.searchType)
         self.rButton2 = ttk.Radiobutton(self.root, text="DFS Style", value="DFS", variable=self.searchType)
-        self.rButton1.place(x=420, y=195)
-        self.rButton2.place(x=420, y=220)
+        self.rButton1.place(x=400, y=190)
+        self.rButton2.place(x=400, y=220)
 
 ##----------Results Box-------------------
         self.resultsFrame = ttk.Frame(style="blueRoundBorder", padding=10, width=780, height=235)
-        self.resultsFrame.place(x=10, y=256)
+        self.resultsFrame.pack(side="bottom", pady=10)
+        self.resultsFrame.pack_propagate(0)
         self.results = ttk.Label(self.resultsFrame, text="Results", font=('Helvetica Neue', 20, 'bold'))
         self.results.place(x=0, y=0)
+
+##---------Search Button------------------
+        self.searchButton = ttk.Button(self.root, text="Search!", command=self.search)
+        self.searchButton.pack(side="bottom")
 
 ## Prevent resizing of window to keep everything looking nice
         self.root.resizable(False, False)
         self.root.mainloop()
+#////////////////////////////////////////////
+
+##///////////////////////////////////////////
+##-------On click of Search! button----------
+## Example functionality: on click of search button, pass to function in other class, then print results of other function
+
+    def search(self):
+            
+## Destroy any existing search results to make room for new results
+        for widget in self.resultsFrame.winfo_children():
+
+                if isinstance(widget, tk.Label):
+
+                        widget.destroy()
+
+##//////////////////////////////////////////////////////////
+##--------Interface with other Class or Function------------
+## Send search parameters to other function, class, etc. to do something with them
+##---------Example-------------
+#        fooObject.setFoo(self.username.get(), self.maxDegSeparation.get(), self.minNumFollowers.get(), self.searchType.get())
+#        results = fooObject.getFoo()
+
+
+
+
+##//////////////////////////////////////////////////////////
+
+##--------Output results to window------------
+## Displays results of search and search parameters in results frame
+## Currently takes tuple of account usernames
+
+## Display search parameters
+        searchParam = tk.Label(self.resultsFrame, text="Search Style: "+self.searchType.get()+
+                "\nMax Degrees Separation: "+self.maxDegSeparation.get()+"\nMin Number Followers: "+
+                self.minNumFollowers.get(), font=('Helvetica Neue', 10), background="#00AEF5", justify="right")
+        searchParam.pack(anchor="ne")
+
+## Display results
+        first = True
+        for account in results:
+                
+                if first:
+                        first=False
+                        label = tk.Label(self.resultsFrame, text="username: "+account+"\nwith X followers", font=('Helvetica Neue', 10), background="#00AEF5", justify="center")
+                        label.pack(side="left", fill="x", expand=True)
+                        continue
+                
+                follows = tk.Label(self.resultsFrame, text="is followed by", font=('Helvetica Neue', 8), background="#00AEF5", justify="center")
+                follows.pack(side="left", fill="x", padx=10, expand=True)
+                label = tk.Label(self.resultsFrame, text="username: "+account+"\nwith X followers", font=('Helvetica Neue', 10), background="#00AEF5", justify="center")
+                label.pack(side="left", fill="x", expand=True)
+
+#/////////////////////////////////////////////
+
+
+
+##////////////////////////////////////////////
+##-------------Test Class-------------------
+# class Foo:
+
+#         def __init__(self):
+
+#                 self.foo="bar"
+
+#         def getFoo(self):
+
+#                 return (self.foo, "x account")
+
+#         def setFoo(self, *input):
+
+#                 self.foo = input[0]
+#//////////////////////////////////////////////
+
 
 
 ##/////////////////////////////////////////////
 ##----------------MAIN-------------------------
-##GUI()
+
+# fooObject = Foo()
+# guiObject = Gui()
