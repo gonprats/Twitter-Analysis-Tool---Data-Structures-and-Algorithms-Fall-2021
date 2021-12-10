@@ -1,11 +1,17 @@
 import tkinter as tk
 import tkinter.ttk as ttk
+import webbrowser
+import time
 
 ##////////////////////////////////////
 ##-----------READ ME------------------
 ## Easiest way for Gui to interact with other classes or functions
-## is to call them in the section at line 331. Gui can pass the search parameters
+## is to call them in the section at line 331. Gui can pass the search parameters using the following,
+## user, separation, followers, search
+## then it outputs any data stored in the "results" and "followers" variable
 ##////////////////////////////////////
+
+
 
 class Gui:
     ## Citation regarding the GUI class, the trick to get rounded borders on widgets was found on stackoverflow
@@ -19,6 +25,8 @@ class Gui:
         self.root.geometry("800x600")
         self.root.configure(background="white")
         self.root.title("Influence Analysis")
+
+
 
 ##//////////////////////////////////////////////////////////////
 ##-------------------Base64 encoded images----------------------
@@ -215,8 +223,9 @@ class Gui:
         1i74AAAAAElFTkSuQmCC
         """)
 ##--------------END OF BASE64 ENCODED IMAGES--------------------
-
 ##//////////////////////////////////////////////////////////////
+
+
 
 ##/////////////////////////////////////
 ##---------------Styles----------------
@@ -237,6 +246,8 @@ class Gui:
         self.style.configure("TButton", font=('Helvetica Neue', 20, 'bold'))
 ##/////////////////////////////////////
 
+
+
 ##//////////////////////////////////////////////////////////
 ##----------Main Class Functionality-----------------------
 ##----------Variables---------------------
@@ -244,6 +255,7 @@ class Gui:
         self.maxDegSeparation = tk.StringVar()
         self.minNumFollowers = tk.StringVar()
         self.searchType = tk.StringVar()
+        self.timeElapsed = tk.StringVar()
 
 ##----------Title-------------------------
 ## Create title frame using blue rounded edge image style
@@ -305,6 +317,10 @@ class Gui:
         self.results = ttk.Label(self.resultsFrame, text="Results", font=('Helvetica Neue', 20, 'bold'))
         self.results.place(x=0, y=0)
 
+##---------Time elapsed-------------------
+        self.timeLabel = tk.Label(self.root, textvariable=self.timeElapsed, font=('Consolas', 8), background="white")
+        self.timeLabel.pack(side="bottom")
+
 ##---------Search Button------------------
         self.searchButton = ttk.Button(self.root, text="Search!", command=self.search)
         self.searchButton.pack(side="bottom")
@@ -312,7 +328,9 @@ class Gui:
 ## Prevent resizing of window to keep everything looking nice
         self.root.resizable(False, False)
         self.root.mainloop()
-#////////////////////////////////////////////
+#///////////////////////////////////////////////////////////
+
+
 
 ##///////////////////////////////////////////
 ##-------On click of Search! button----------
@@ -320,6 +338,10 @@ class Gui:
 
     def search(self):
             
+## initialize results list/tuple
+        results = []
+        followers = []
+
 ## Destroy any existing search results to make room for new results
         for widget in self.resultsFrame.winfo_children():
 
@@ -327,18 +349,29 @@ class Gui:
 
                         widget.destroy()
 
+## Store search parameters
+        user = self.username.get()
+        separation = self.maxDegSeparation.get()
+        followers = self.minNumFollowers.get()
+        search  = self.searchType.get()
+##//////////////////////////////////////////
+
+
 ##//////////////////////////////////////////////////////////
+        timeStart = time.time()
 ##--------Interface with other Class or Function------------
 ## Send search parameters to other function, class, etc. to do something with them
-##---------Example-------------
-#        fooObject.setFoo(self.username.get(), self.maxDegSeparation.get(), self.minNumFollowers.get(), self.searchType.get())
-#        results = fooObject.getFoo()
+        ## -------Example of calling function------------
+        #results, followers = setThenGetFoo(user, separation, followers, search)
+             
+                                                                #<- call functions here, pass search parameters (user, separation, followers, search)
 
-
-
-
+        self.timeElapsed.set("Time Elapsed: " + str(time.time() - timeStart))
 ##//////////////////////////////////////////////////////////
 
+
+
+##////////////////////////////////////////////
 ##--------Output results to window------------
 ## Displays results of search and search parameters in results frame
 ## Currently takes tuple of account usernames
@@ -349,46 +382,49 @@ class Gui:
                 self.minNumFollowers.get(), font=('Helvetica Neue', 10), background="#00AEF5", justify="right")
         searchParam.pack(anchor="ne")
 
-## Display results
-        first = True
-        for account in results:
-                
-                if first:
-                        first=False
-                        label = tk.Label(self.resultsFrame, text="username: "+account+"\nwith X followers", font=('Helvetica Neue', 10), background="#00AEF5", justify="center")
-                        label.pack(side="left", fill="x", expand=True)
-                        continue
-                
-                follows = tk.Label(self.resultsFrame, text="is followed by", font=('Helvetica Neue', 8), background="#00AEF5", justify="center")
-                follows.pack(side="left", fill="x", padx=10, expand=True)
-                label = tk.Label(self.resultsFrame, text="username: "+account+"\nwith X followers", font=('Helvetica Neue', 10), background="#00AEF5", justify="center")
-                label.pack(side="left", fill="x", expand=True)
-
+## Display results if results list has values
+        if results:
+                first = True
+                for account, followersCount in zip(results, followers):
+                        if first:
+                                first=False
+                                label = tk.Label(self.resultsFrame, text="username: "+account+"\nwith "+str(followersCount)+" followers", font=('Helvetica Neue', 8), background="#00AEF5", justify="center")
+                                label.pack(side="left", fill="x", expand=True, ipady=40)
+                                link1 = tk.Label(label, text="@"+account, font=('Helvetica Neue', 10), fg="blue", cursor="hand2", justify="center")
+                                link1.pack(side="top")
+                                link1.bind("<Button-1>", lambda a, url="https://www.twitter.com/"+account: webbrowser.open_new(url))
+                                continue
+                        
+                        follows = tk.Label(self.resultsFrame, text="is followed by", font=('Helvetica Neue', 6), background="#00AEF5", justify="center")
+                        follows.pack(side="left", fill="x", padx=10, expand=True)
+                        label = tk.Label(self.resultsFrame, text="username: "+account+"\nwith "+str(followersCount)+" followers", font=('Helvetica Neue', 8), background="#00AEF5", justify="center")
+                        label.pack(side="left", fill="x", expand=True, ipady=40)
+                        link1 = tk.Label(label, text="@"+account, font=('Helvetica Neue', 10), fg="blue", cursor="hand2", justify="center")
+                        link1.pack(side="top")
+                        link1.bind("<Button-1>", lambda a, url="https://www.twitter.com/"+account: webbrowser.open_new(url))
+                        
+                        
+## Case where no results were returned (e.g. username not found)
+        else:
+                label = tk.Label(self.resultsFrame, text="No results found.\n Username is invalid or is not connected to an account with desired number of followers", font=('Helvetica Neue', 14), background="#00AEF5", justify="center")
+                label.pack(side="left", fill="x", expand=True) 
 #/////////////////////////////////////////////
 
 
 
 ##////////////////////////////////////////////
-##-------------Test Class-------------------
-# class Foo:
-
-#         def __init__(self):
-
-#                 self.foo="bar"
-
-#         def getFoo(self):
-
-#                 return (self.foo, "x account")
-
-#         def setFoo(self, *input):
-
-#                 self.foo = input[0]
+##-------------Test Function-------------------
+# def setThenGetFoo(*input):
+#         foo = input[0]
+#         foo2 = foo[0:2]
+#         follower1 = len(foo)
+#         follower2 = len(foo2)
+#         return (foo, foo2, foo, foo), (follower1, follower2, follower1, follower1)
 #//////////////////////////////////////////////
 
 
 
-##/////////////////////////////////////////////
-##----------------MAIN-------------------------
+##/////////////////////////////////////////////////////////////////////
+##-----------------------------MAIN------------------------------------
 
-# fooObject = Foo()
-# guiObject = Gui()
+guiObject = Gui()
